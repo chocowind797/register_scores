@@ -34,7 +34,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalDouble;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class Option extends AppCompatActivity {
@@ -99,7 +101,7 @@ public class Option extends AppCompatActivity {
                     boolean b = true;
 
                     if(!dts.containsKey(choice[0])) {
-                        dts.put(choice[0], new ArrayList<>());
+                        dts.put(choice[0], new TreeSet<>());
                         b = false;
                     }
                     if (dts.get(choice[0]).contains(stimes) && b) {
@@ -207,9 +209,9 @@ public class Option extends AppCompatActivity {
                 for(String s : scores)
                     sb.append(s).append("|");
                 if(number.length() == 1){
-                    number = "\t\t" + number;
+                    number = " " + number;
                 }
-                return number.concat("|\t\t\t\t").concat(sb.toString());
+                return number.concat("|    ").concat(sb.toString());
             }
         }
         static class All {
@@ -268,7 +270,8 @@ public class Option extends AppCompatActivity {
                     choice[0] = species[position];
                     arr_times.clear();
                     arr_times.add("全部");
-                    ArrayList<String> arr = dts.get(choice[0]);
+                    Set<String> arr = dts.get(choice[0]);
+                    Log.e("Tag", dts.toString());
                     if(arr != null)
                         arr_times.addAll(arr);
                 }
@@ -280,7 +283,6 @@ public class Option extends AppCompatActivity {
             });
 
             TextView data_show = findViewById(R.id.query_show);
-            TextView times_all = findViewById(R.id.times_all);
 
             Button query = findViewById(R.id.grade_query);
             query.setOnClickListener(new View.OnClickListener() {
@@ -291,27 +293,20 @@ public class Option extends AppCompatActivity {
                     String time = choice[1];
                     StringBuffer sb = new StringBuffer();
 
-                    times_all.setText("");
-
                     if(!time.equals("全部")) {
-                        times_all.setText("分數");
                         Map<String, String> scores = allData.get(specie).get(time);
                         String ans;
                         for(int i = 1;i <= 40;i++){
                             if(String.valueOf(i).length() == 1)
-                                sb.append("\t\t").append(i).append("\t\t\t\t");
-                            else
-                                sb.append(i).append("\t\t\t\t");
+                                sb.append(" ");
+                            sb.append(i).append("          ");
                             ans = scores.getOrDefault(String.valueOf(i), "  ");
                             if(ans.length() == 2)
-                                sb.append(ans).append("\t\t");
-                            else
-                                sb.append(ans);
-                            sb.append("\n");
+                                sb.append(" ");
+                            sb.append(ans).append("\n");
                         }
                     }else{
                         All all = new All();
-                        StringBuffer title = new StringBuffer("                   ");
                         Map<String, Map<String, String>> scores1 = allData.get(specie);
                         if(scores1 == null){
                             data_show.setText("查無資料");
@@ -329,13 +324,12 @@ public class Option extends AppCompatActivity {
 
                         while (iter.hasNext()) {
                             String key = iter.next();
-                            title.append(key).append("         ");
                             scores2 = scores1.get(key);
                             for (int i = 1; i <= 40; i++) {
                                 temp = all.get(String.valueOf(i));
                                 score = scores2.getOrDefault(String.valueOf(i), "       ");
                                 if (score.length() == 2)
-                                    score += "\t\t";
+                                    score = " " + score;
                                 temp.scores.add(score);
                             }
                         }
@@ -343,11 +337,8 @@ public class Option extends AppCompatActivity {
                         for (Score s : all.scores) {
                             sb.append(s).append("\n");
                         }
-
-                        times_all.setText(title);
                     }
                     data_show.setText(sb);
-
                 }
             });
         }
@@ -518,7 +509,7 @@ public class Option extends AppCompatActivity {
         }
     }
 
-    final static Map<String, ArrayList<String>> dts = new HashMap<>();
+    final static Map<String, Set<String>> dts = new HashMap<>();
     static DatabaseReference exam, work;
 
     @Override
@@ -566,11 +557,11 @@ public class Option extends AppCompatActivity {
         reference.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
-                ArrayList<String> arr;
+                Set<String> arr;
                 if (dts.containsKey(key)) {
                     arr = dts.get(key);
                 } else {
-                    arr = new ArrayList<>();
+                    arr = new TreeSet<>();
                 }
                 arr.add(snapshot.getKey());
                 dts.put(key, arr);
@@ -590,7 +581,7 @@ public class Option extends AppCompatActivity {
                 else if (path.contains("考試"))
                     type = "考試";
 
-                ArrayList<String> arr = dts.get(type);
+                Set<String> arr = dts.get(type);
                 arr.remove(snapshot.getKey());
             }
 
