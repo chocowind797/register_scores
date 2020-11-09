@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "884808951995",
+    "firebase_url": "https://school-eb60d.firebaseio.com",
+    "project_id": "school-eb60d",
+    "storage_bucket": "school-eb60d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:884808951995:android:e8472e9b0dd7d12d70a19e",
+        "android_client_info": {
+          "package_name": "com.example.school"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "884808951995-1nvh03gpedfkfj5ba7ob9lbbpnel91ln.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAop1NpdYSw14SsNVSFbcibbWoCGvCyAk0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "884808951995-1nvh03gpedfkfj5ba7ob9lbbpnel91ln.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
