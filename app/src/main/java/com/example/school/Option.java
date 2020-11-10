@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -104,38 +106,68 @@ public class Option extends AppCompatActivity {
                         dts.put(choice[0], new TreeSet<>());
                         b = false;
                     }
-                    if (dts.get(choice[0]).contains(stimes) && b) {
-                        new AlertDialog.Builder(RegisterGrades.this)
-                                .setTitle("注意")
-                                .setMessage("\n此筆資料已存在, 是否覆蓋")
-                                .setPositiveButton("是", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        reference.child(stimes).removeValue();
-                                        String[] temp;
-                                        for (String score : scores) {
-                                            temp = score.split(" ");
-                                            reference.child(stimes).child(temp[0]).setValue(Integer.parseInt(temp[1]));
+
+                    try {
+
+                        if (dts.get(choice[0]).contains(stimes) && b) {
+                            new AlertDialog.Builder(RegisterGrades.this)
+                                    .setTitle("注意")
+                                    .setMessage("\n此筆資料已存在, 是否覆蓋")
+                                    .setPositiveButton("是", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            reference.child(stimes).removeValue();
+                                            String[] temp;
+                                            int number = 1;
+                                            for (String score : scores) {
+                                                temp = score.split(" ");
+                                                if (temp.length == 1) {
+                                                    if (!"".equals(temp[0])) {
+                                                        if (temp[0].contains("."))
+                                                            reference.child(stimes).child(String.valueOf(number)).setValue(Double.parseDouble(temp[0]));
+                                                        else
+                                                            reference.child(stimes).child(String.valueOf(number)).setValue(Integer.parseInt(temp[0]));
+                                                    }
+                                                } else if (temp[1].contains("."))
+                                                    reference.child(stimes).child(temp[0]).setValue(Double.parseDouble(temp[1]));
+                                                else
+                                                    reference.child(stimes).child(temp[0]).setValue(Integer.parseInt(temp[1]));
+                                                number++;
+                                            }
+                                            Toast.makeText(RegisterGrades.this, "已覆蓋", Toast.LENGTH_SHORT).show();
                                         }
-                                        Toast.makeText(RegisterGrades.this, "已覆蓋", Toast.LENGTH_SHORT).show();
+                                    })
+                                    .setNegativeButton("否", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            Toast.makeText(RegisterGrades.this, "取消覆蓋", Toast.LENGTH_SHORT).show();
+                                        }
+                                    })
+                                    .create()
+                                    .show();
+                        } else {
+                            String[] temp;
+                            int number = 1;
+                            for (String score : scores) {
+                                temp = score.split(" ");
+                                if (temp.length == 1) {
+                                    if (!"".equals(temp[0])) {
+                                        if (temp[0].contains("."))
+                                            reference.child(stimes).child(String.valueOf(number)).setValue(Double.parseDouble(temp[0]));
+                                        else
+                                            reference.child(stimes).child(String.valueOf(number)).setValue(Integer.parseInt(temp[0]));
                                     }
-                                })
-                                .setNegativeButton("否", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        Toast.makeText(RegisterGrades.this, "取消覆蓋", Toast.LENGTH_SHORT).show();
-                                    }
-                                })
-                                .create()
-                                .show();
-                    } else {
-                        String[] temp;
-                        for (String score : scores) {
-                            temp = score.split(" ");
-                            reference.child(stimes).child(temp[0]).setValue(Integer.parseInt(temp[1]));
+                                } else if (temp[1].contains("."))
+                                    reference.child(stimes).child(temp[0]).setValue(Double.parseDouble(temp[1]));
+                                else
+                                    reference.child(stimes).child(temp[0]).setValue(Integer.parseInt(temp[1]));
+                                number++;
+                            }
+                            Toast.makeText(getApplicationContext(), "已登記", Toast.LENGTH_SHORT).show();
                         }
                         scores_data.setText("");
-                        Toast.makeText(getApplicationContext(), "已登記", Toast.LENGTH_SHORT).show();
+                    }catch (NumberFormatException nfe){
+                        Toast.makeText(getApplicationContext(), "資料有誤", Toast.LENGTH_SHORT).show();
                     }
                 }
             });
@@ -207,7 +239,7 @@ public class Option extends AppCompatActivity {
             public String toString() {
                 StringBuffer sb = new StringBuffer();
                 for(String s : scores)
-                    sb.append(s).append("|");
+                    sb.append(s).append(" | ");
                 if(number.length() == 1){
                     number = " " + number;
                 }
@@ -327,7 +359,7 @@ public class Option extends AppCompatActivity {
                             scores2 = scores1.get(key);
                             for (int i = 1; i <= 40; i++) {
                                 temp = all.get(String.valueOf(i));
-                                score = scores2.getOrDefault(String.valueOf(i), "       ");
+                                score = scores2.getOrDefault(String.valueOf(i), "  ");
                                 if (score.length() == 2)
                                     score = " " + score;
                                 temp.scores.add(score);
@@ -410,7 +442,7 @@ public class Option extends AppCompatActivity {
             QueryGrades.registerRef("考試", exam);
             QueryGrades.registerRef("作業", work);
 
-            String[] species = {"作業", "考試"};
+            String[] species = {"作業", "考試", "全部"};
             Spinner spinner = findViewById(R.id.average_species_spinner);
             ArrayAdapter<String> adapter_sp = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, species);
             spinner.setAdapter(adapter_sp);
@@ -436,49 +468,100 @@ public class Option extends AppCompatActivity {
                 @RequiresApi(api = Build.VERSION_CODES.N)
                 @Override
                 public void onClick(View v) {
-                    if("".equals(delcount.getText().toString())){
+                    if ("".equals(delcount.getText().toString())) {
                         Toast.makeText(getApplicationContext(), "刪除數量不得為空", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
                     int del = Integer.parseInt(delcount.getText().toString());
 
-                    if(del < 0){
+                    if (del < 0) {
                         Toast.makeText(getApplicationContext(), "刪除數量不得小於0", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
                     List<Double> scores;
-
                     QueryGrades.All all = new QueryGrades.All();
-                    Map<String, Map<String, String>> scores1 = QueryGrades.allData.get(choice[0]);
 
-                    if(scores1 == null){
-                        average_show.setText("查無資料");
-                        return;
-                    }
+                    if (!choice[0].equals("全部")) {
+                        Map<String, Map<String, String>> scores1 = QueryGrades.allData.get(choice[0]);
 
-                    Map<String, String> scores2;
-                    Iterator<String> iter = scores1.keySet().iterator();
+                        if (scores1 == null) {
+                            average_show.setText("查無資料");
+                            return;
+                        }
 
-                    for (int i = 1; i <= 40; i++) {
-                        all.add(new QueryGrades.Score(String.valueOf(i)));
-                    }
+                        Map<String, String> scores2;
+                        Iterator<String> iter = scores1.keySet().iterator();
 
-                    QueryGrades.Score temp;
-                    String score;
-
-                    while (iter.hasNext()) {
-                        String key = iter.next();
-                        scores2 = scores1.get(key);
                         for (int i = 1; i <= 40; i++) {
-                            temp = all.get(String.valueOf(i));
-                            score = scores2.getOrDefault(String.valueOf(i), "0");
-                            temp.scores.add(score);
+                            all.add(new QueryGrades.Score(String.valueOf(i)));
+                        }
+
+                        QueryGrades.Score temp;
+                        String score;
+
+                        while (iter.hasNext()) {
+                            String key = iter.next();
+                            scores2 = scores1.get(key);
+                            for (int i = 1; i <= 40; i++) {
+                                temp = all.get(String.valueOf(i));
+                                score = scores2.getOrDefault(String.valueOf(i), "0");
+                                temp.scores.add(score);
+                            }
+                        }
+                    }else{
+                        Map<String, Map<String, String>> score1 = QueryGrades.allData.get("考試");
+
+                        if(score1 != null) {
+                            Map<String, String> scores2;
+                            Iterator<String> iter = score1.keySet().iterator();
+
+                            for (int i = 1; i <= 40; i++) {
+                                all.add(new QueryGrades.Score(String.valueOf(i)));
+                            }
+
+                            QueryGrades.Score temp;
+                            String score;
+
+                            while (iter.hasNext()) {
+                                String key = iter.next();
+                                scores2 = score1.get(key);
+                                for (int i = 1; i <= 40; i++) {
+                                    temp = all.get(String.valueOf(i));
+                                    score = scores2.getOrDefault(String.valueOf(i), "0");
+                                    temp.scores.add(score);
+                                }
+                            }
+                        }
+
+                        score1 = QueryGrades.allData.get("作業");
+
+                        if(score1 != null) {
+                            Map<String, String> scores2;
+                            Iterator<String> iter = score1.keySet().iterator();
+
+                            if(all.scores.size() == 0){
+                                for (int i = 1; i <= 40; i++) {
+                                    all.add(new QueryGrades.Score(String.valueOf(i)));
+                                }
+                            }
+
+                            QueryGrades.Score temp;
+                            String score;
+
+                            while (iter.hasNext()) {
+                                String key = iter.next();
+                                scores2 = score1.get(key);
+                                for (int i = 1; i <= 40; i++) {
+                                    temp = all.get(String.valueOf(i));
+                                    score = scores2.getOrDefault(String.valueOf(i), "0");
+                                    temp.scores.add(score);
+                                }
+                            }
                         }
                     }
-
-                    if(all.scores.get(0).scores.size() < del) {
+                    if (all.scores.get(0).scores.size() < del) {
                         new AlertDialog.Builder(AverageGrades.this)
                                 .setTitle("錯誤")
                                 .setMessage("\n刪除數量大於分數數量")
@@ -495,11 +578,11 @@ public class Option extends AppCompatActivity {
 
                     StringBuffer sb = new StringBuffer();
                     AtomicReference<Double> ave = new AtomicReference<>((double) 0);
-                    for(QueryGrades.Score s : all.scores){
+                    for (QueryGrades.Score s : all.scores) {
                         scores = s.scores.parallelStream().mapToDouble(Double::parseDouble).sorted().collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
                         scores = scores.subList(del, scores.size());
                         scores.parallelStream().mapToDouble(Double::doubleValue).average().ifPresent(ave::set);
-                        if(s.number.length() == 1)
+                        if (s.number.length() == 1)
                             sb.append("  ");
                         sb.append(s.number).append("      ").append(String.format("%.1f", ave.get())).append("\n");
                     }
@@ -551,6 +634,27 @@ public class Option extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_delsub, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        String subject = getIntent().getExtras().getString("subject");
+
+        DatabaseReference reference = FirebaseDatabase.getInstance("https://school-eb60d.firebaseio.com/").getReference(subject);
+        reference.removeValue();
+
+        dts.remove(subject);
+
+        Intent intent = new Intent(Option.this, MainActivity.class);
+        startActivity(intent);
+
+        return super.onOptionsItemSelected(item);
     }
 
     public void registerRef(String key, DatabaseReference reference) {

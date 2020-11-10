@@ -35,6 +35,8 @@ public class MainActivity extends AppCompatActivity {
             setTitle("科目");
 
             ArrayList<String> types = getIntent().getStringArrayListExtra("types");
+            if(!types.contains("新增科目"))
+                types.add("新增科目");
             ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, types);
 
             ListView listView = findViewById(R.id.main_listview);
@@ -114,8 +116,6 @@ public class MainActivity extends AppCompatActivity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(!types.contains("新增科目"))
-                    types.add("新增科目");
                 Intent intent = new Intent(MainActivity.this, Relay.class);
                 Bundle bundle = new Bundle();
                 bundle.putStringArrayList("types", types);
