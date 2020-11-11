@@ -106,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
 
         ArrayList<String> types = new ArrayList<>();
 
-        final boolean[] check = {false};
+        final boolean[] check = {false, false};
 
         DatabaseReference reference = FirebaseDatabase.getInstance("https://school-eb60d.firebaseio.com/").getReference();
         reference.addListenerForSingleValueEvent(new ValueEventListener() {

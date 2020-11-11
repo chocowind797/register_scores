@@ -79,13 +79,6 @@ public class Option extends AppCompatActivity {
                 public void onClick(View v) {
                     String stimes = times.getText().toString();
 
-                    if(user[1] != null){
-                        if(!user[0].equals(user[1])){
-                            Toast.makeText(RegisterGrades.this, "權限不足", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                    }
-
                     if("".equals(stimes)){
                         Toast.makeText(getApplicationContext(), "次數不得為空", Toast.LENGTH_SHORT).show();
                         return;
@@ -185,13 +178,6 @@ public class Option extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
                     String stimes = times.getText().toString();
-
-                    if(user[1] != null){
-                        if(!user[0].equals(user[1])){
-                            Toast.makeText(RegisterGrades.this, "權限不足", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                    }
 
                     if(Integer.parseInt(stimes) < 1) {
                         Toast.makeText(getApplicationContext(), "次數錯誤", Toast.LENGTH_SHORT).show();
@@ -656,6 +642,11 @@ public class Option extends AppCompatActivity {
                 Intent intent = new Intent();
                 switch (s){
                     case "登記成績":
+                        if(user[1] != null)
+                            if(!user[0].equals(user[1])) {
+                                Toast.makeText(Option.this, "權限不足, 無法訪問", Toast.LENGTH_SHORT).show();
+                                return;
+                            }
                         intent.setClass(Option.this, RegisterGrades.class);
                         break;
                     case "查詢成績":
@@ -678,12 +669,14 @@ public class Option extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+
         if(user[1] != null){
             if(!user[0].equals(user[1])){
-                Toast.makeText(Option.this, "權限不足", Toast.LENGTH_SHORT).show();
+                Toast.makeText(Option.this, "權限不足, 無法刪除", Toast.LENGTH_SHORT);
                 return super.onOptionsItemSelected(item);
             }
         }
+
         String subject = getIntent().getExtras().getString("subject");
 
         DatabaseReference reference = FirebaseDatabase.getInstance("https://school-eb60d.firebaseio.com/").getReference(subject);
