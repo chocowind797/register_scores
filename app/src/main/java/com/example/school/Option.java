@@ -672,7 +672,7 @@ public class Option extends AppCompatActivity {
 
         if(user[1] != null){
             if(!user[0].equals(user[1])){
-                Toast.makeText(Option.this, "權限不足, 無法刪除", Toast.LENGTH_SHORT);
+                Toast.makeText(Option.this, "權限不足, 無法刪除", Toast.LENGTH_SHORT).show();
                 return super.onOptionsItemSelected(item);
             }
         }
