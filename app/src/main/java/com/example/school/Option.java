@@ -677,15 +677,26 @@ public class Option extends AppCompatActivity {
             }
         }
 
-        String subject = getIntent().getExtras().getString("subject");
-
         DatabaseReference reference = FirebaseDatabase.getInstance("https://school-eb60d.firebaseio.com/").getReference(subject);
-        reference.removeValue();
 
-        dts.remove(subject);
+        new AlertDialog.Builder(Option.this)
+                .setTitle("刪除科目")
+                .setMessage("\n將會刪除此科目的所有資料")
+                .setPositiveButton("確定", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        reference.removeValue();
 
-        Intent intent = new Intent(Option.this, MainActivity.class);
-        startActivity(intent);
+                        dts.remove(subject);
+
+                        Intent intent = new Intent(Option.this, MainActivity.class);
+                        startActivity(intent);
+                    }
+                })
+                .setNegativeButton("取消", (dialog, which) -> Toast.makeText(Option.this, "取消刪除科目", Toast.LENGTH_SHORT).show())
+                .create()
+                .show();
+
 
         return super.onOptionsItemSelected(item);
     }
