@@ -7,8 +7,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
+import android.webkit.DownloadListener;
+import android.webkit.WebView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -16,6 +21,7 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -47,7 +53,6 @@ public class MainActivity extends AppCompatActivity {
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                     String subject = types.get(position);
                     if(subject.equals("新增科目")){
-
                         EditText et = new EditText(Relay.this);
 
                         new AlertDialog.Builder(Relay.this).setTitle("新增科目")
@@ -92,18 +97,30 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public static final String version = "1.0.0";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
+
         ArrayList<String> types = new ArrayList<>();
+
+        final boolean[] check = {false};
 
         DatabaseReference reference = FirebaseDatabase.getInstance("https://school-eb60d.firebaseio.com/").getReference();
         reference.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                for(DataSnapshot ds : snapshot.getChildren())
-                    types.add(ds.getKey());
+                for(DataSnapshot ds : snapshot.getChildren()) {
+                    if(ds.getKey().equals("config")){
+                        String v = ds.child("version").getValue().toString();
+                        if(version.equals(v)){
+                            check[0] = true;
+                        }
+                    }else
+                        types.add(ds.getKey());
+                }
             }
 
             @Override
@@ -116,12 +133,59 @@ public class MainActivity extends AppCompatActivity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, Relay.class);
-                Bundle bundle = new Bundle();
-                bundle.putStringArrayList("types", types);
-                intent.putExtras(bundle);
-                startActivity(intent);
+                if(types.size() == 0) {
+                    Toast.makeText(MainActivity.this, "請重新點擊", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if(check[0]) {
+                    Intent intent = new Intent(MainActivity.this, Relay.class);
+                    Bundle bundle = new Bundle();
+                    bundle.putStringArrayList("types", types);
+                    intent.putExtras(bundle);
+                    startActivity(intent);
+                }else{
+                    new AlertDialog.Builder(MainActivity.this)
+                            .setTitle("更新")
+                            .setMessage("\n版本過舊,請更新")
+                            .setPositiveButton("下載更新", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    WebView webView = new WebView(MainActivity.this);
+
+                                    String url = "http://github.com/chocowind797/register_scores/raw/master/app/release/app-release.apk";
+                                    webView.loadUrl(url);
+                                    webView.setDownloadListener(new DownloadListener() {
+                                        @Override
+                                        public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
+                                            Uri uri = Uri.parse(url);
+                                            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                                            startActivity(intent);
+                                        }
+                                    });
+                                }
+                            })
+                            .create()
+                            .show();
+                }
             }
         });
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_logout, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        FirebaseAuth.getInstance().signOut();
+
+        Toast.makeText(this, "已登出", Toast.LENGTH_SHORT).show();
+
+        Intent intent = new Intent(this, Activities.HomeActivity.class);
+        startActivity(intent);
+
+        return super.onOptionsItemSelected(item);
     }
 }

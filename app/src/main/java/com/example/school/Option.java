@@ -24,11 +24,13 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -77,6 +79,13 @@ public class Option extends AppCompatActivity {
                 public void onClick(View v) {
                     String stimes = times.getText().toString();
 
+                    if(user[1] != null){
+                        if(!user[0].equals(user[1])){
+                            Toast.makeText(RegisterGrades.this, "權限不足", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                    }
+
                     if("".equals(stimes)){
                         Toast.makeText(getApplicationContext(), "次數不得為空", Toast.LENGTH_SHORT).show();
                         return;
@@ -108,7 +117,6 @@ public class Option extends AppCompatActivity {
                     }
 
                     try {
-
                         if (dts.get(choice[0]).contains(stimes) && b) {
                             new AlertDialog.Builder(RegisterGrades.this)
                                     .setTitle("注意")
@@ -177,6 +185,13 @@ public class Option extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
                     String stimes = times.getText().toString();
+
+                    if(user[1] != null){
+                        if(!user[0].equals(user[1])){
+                            Toast.makeText(RegisterGrades.this, "權限不足", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                    }
 
                     if(Integer.parseInt(stimes) < 1) {
                         Toast.makeText(getApplicationContext(), "次數錯誤", Toast.LENGTH_SHORT).show();
@@ -594,6 +609,8 @@ public class Option extends AppCompatActivity {
 
     final static Map<String, Set<String>> dts = new HashMap<>();
     static DatabaseReference exam, work;
+    static String subject;
+    static String[] user;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -607,8 +624,25 @@ public class Option extends AppCompatActivity {
         exam = firebase.getReference(subject + "/考試");
         work = firebase.getReference(subject + "/作業");
 
+        Option.subject = subject;
+
         registerRef("考試", exam);
         registerRef("作業", work);
+
+        user = new String[2];
+        user[0] = FirebaseAuth.getInstance().getCurrentUser().getEmail();
+        DatabaseReference tr = FirebaseDatabase.getInstance("https://school-eb60d.firebaseio.com/").getReference("config").child("auth").child(subject);
+        tr.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                user[1] = snapshot.getValue().toString();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
 
         String[] options = {"登記成績", "查詢成績", "成績平均"};
 
@@ -644,6 +678,12 @@ public class Option extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if(user[1] != null){
+            if(!user[0].equals(user[1])){
+                Toast.makeText(Option.this, "權限不足", Toast.LENGTH_SHORT).show();
+                return super.onOptionsItemSelected(item);
+            }
+        }
         String subject = getIntent().getExtras().getString("subject");
 
         DatabaseReference reference = FirebaseDatabase.getInstance("https://school-eb60d.firebaseio.com/").getReference(subject);
