@@ -152,7 +152,7 @@ public class MainActivity extends AppCompatActivity {
                                 public void onClick(DialogInterface dialog, int which) {
                                     WebView webView = new WebView(MainActivity.this);
 
-                                    String url = "http://github.com/chocowind797/register_scores/raw/master/app/release/app-release.apk";
+                                    String url = "https://github.com/chocowind797/register_scores/raw/master/app/release/app-release.apk";
                                     webView.loadUrl(url);
                                     webView.setDownloadListener(new DownloadListener() {
                                         @Override
