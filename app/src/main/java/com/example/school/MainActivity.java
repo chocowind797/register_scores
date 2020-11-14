@@ -58,32 +58,25 @@ public class MainActivity extends AppCompatActivity {
                         new AlertDialog.Builder(Relay.this).setTitle("新增科目")
                                 .setIcon(android.R.drawable.ic_input_add)
                                 .setView(et)
-                                .setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        String input = et.getText().toString();
-                                        if ("".equals(input)) {
+                                .setPositiveButton("确定", (dialog, which) -> {
+                                    String input = et.getText().toString();
+                                    if ("".equals(input)) {
+                                        Toast.makeText(Relay.this, "新增内容不能為空！", Toast.LENGTH_SHORT).show();
+                                    } else {
+                                        if(input.trim().equals("")){
                                             Toast.makeText(Relay.this, "新增内容不能為空！", Toast.LENGTH_SHORT).show();
-                                        } else {
-                                            if(input.trim().equals("")){
-                                                Toast.makeText(Relay.this, "新增内容不能為空！", Toast.LENGTH_SHORT).show();
-                                            }else{
-                                                if(types.contains(input)){
-                                                    Toast.makeText(Relay.this, "科目已存在！", Toast.LENGTH_SHORT).show();
-                                                }else {
-                                                    types.add(0, input);
-                                                    listView.setAdapter(adapter);
-                                                    Toast.makeText(Relay.this, "已新增項目", Toast.LENGTH_SHORT).show();
-                                                }
+                                        }else{
+                                            if(types.contains(input)){
+                                                Toast.makeText(Relay.this, "科目已存在！", Toast.LENGTH_SHORT).show();
+                                            }else {
+                                                types.add(0, input);
+                                                listView.setAdapter(adapter);
+                                                Toast.makeText(Relay.this, "已新增項目", Toast.LENGTH_SHORT).show();
                                             }
                                         }
                                     }
                                 })
-                                .setNegativeButton("取消", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        Toast.makeText(Relay.this, "取消新增", Toast.LENGTH_SHORT).show();
-                                    }
-                                })
+                                .setNegativeButton("取消", (dialog, which) -> Toast.makeText(Relay.this, "取消新增", Toast.LENGTH_SHORT).show())
                                 .show();
                     }else {
                         Intent intent = new Intent(Relay.this, Option.class);
@@ -130,50 +123,44 @@ public class MainActivity extends AppCompatActivity {
         });
 
         Button button = findViewById(R.id.relay);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(types.size() == 0) {
-                    Toast.makeText(MainActivity.this, "請重新點擊", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                if(check[0]) {
-                    Intent intent = new Intent(MainActivity.this, Relay.class);
-                    Bundle bundle = new Bundle();
-                    bundle.putStringArrayList("types", types);
-                    intent.putExtras(bundle);
-                    startActivity(intent);
-                }else{
-                    new AlertDialog.Builder(MainActivity.this)
-                            .setTitle("更新")
-                            .setMessage("\n版本過舊,請更新")
-                            .setPositiveButton("下載更新", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    WebView webView = new WebView(MainActivity.this);
+        button.setOnClickListener(v -> {
+            if(types.size() == 0) {
+                Toast.makeText(MainActivity.this, "請重新點擊", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if(check[0]) {
+                Intent intent = new Intent(MainActivity.this, Relay.class);
+                Bundle bundle = new Bundle();
+                bundle.putStringArrayList("types", types);
+                intent.putExtras(bundle);
+                startActivity(intent);
+            }else{
+                new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("更新")
+                        .setMessage("\n版本過舊,請更新")
+                        .setPositiveButton("下載更新", (dialog, which) -> {
 
-                                    String url = "https://github.com/chocowind797/register_scores/raw/master/app/release/app-release.apk";
-                                    webView.loadUrl(url);
-                                    webView.setDownloadListener(new DownloadListener() {
-                                        @Override
-                                        public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
-                                            Uri uri = Uri.parse(url);
-                                            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-                                            startActivity(intent);
-                                        }
-                                    });
+                            WebView webView = new WebView(MainActivity.this);
+                            String url = "https://github.com/chocowind797/register_scores/blob/master/app/release/app-release.apk";
+                            webView.loadUrl(url);
+                            webView.setDownloadListener(new DownloadListener() {
+                                @Override
+                                public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
+                                    Uri uri = Uri.parse(url);
+                                    Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                                    startActivity(intent);
                                 }
-                            })
-                            .create()
-                            .show();
-                }
+                            });
+                        })
+                        .create()
+                        .show();
             }
         });
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_logout, menu);
+        getMenuInflater().inflate(R.menu.menu_setting, menu);
         return super.onCreateOptionsMenu(menu);
     }
 
