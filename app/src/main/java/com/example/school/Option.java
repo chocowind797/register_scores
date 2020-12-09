@@ -1,5 +1,6 @@
 package com.example.school;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.ClipData;
@@ -7,8 +8,12 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.os.StrictMode;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -26,6 +31,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.ChildEventListener;
@@ -36,6 +42,10 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.database.core.utilities.Tree;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -51,6 +61,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.IntSupplier;
 import java.util.stream.IntStream;
+
+import jxl.Workbook;
+import jxl.write.Label;
+import jxl.write.WritableSheet;
+import jxl.write.WritableWorkbook;
 
 public class Option extends AppCompatActivity {
     public static class RegisterGrades extends AppCompatActivity {
@@ -89,16 +104,16 @@ public class Option extends AppCompatActivity {
             register.setOnClickListener(v -> {
                 String stimes = times.getText().toString();
 
-                if("".equals(stimes)){
+                if ("".equals(stimes)) {
                     Toast.makeText(getApplicationContext(), "次數不得為空", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                if(Integer.parseInt(stimes) < 1) {
+                if (Integer.parseInt(stimes) < 1) {
                     Toast.makeText(getApplicationContext(), "次數錯誤", Toast.LENGTH_SHORT).show();
                     return;
                 }
-                if("".equals(scores_data.getText().toString())){
+                if ("".equals(scores_data.getText().toString())) {
                     Toast.makeText(getApplicationContext(), "資料不得為空", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -114,7 +129,7 @@ public class Option extends AppCompatActivity {
 
                 boolean b = true;
 
-                if(!dts.containsKey(choice[0])) {
+                if (!dts.containsKey(choice[0])) {
                     dts.put(choice[0], new TreeSet<>());
                     b = false;
                 }
@@ -184,7 +199,7 @@ public class Option extends AppCompatActivity {
                             })
                             .create()
                             .show();
-                }catch (NumberFormatException nfe){
+                } catch (NumberFormatException nfe) {
                     Toast.makeText(getApplicationContext(), "資料有誤", Toast.LENGTH_SHORT).show();
                 }
             });
@@ -193,17 +208,17 @@ public class Option extends AppCompatActivity {
             add.setOnClickListener(v -> {
                 String stimes = times.getText().toString();
 
-                if("".equals(stimes)){
+                if ("".equals(stimes)) {
                     Toast.makeText(getApplicationContext(), "次數不得為空", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                if(Integer.parseInt(stimes) < 1) {
+                if (Integer.parseInt(stimes) < 1) {
                     Toast.makeText(getApplicationContext(), "次數錯誤", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                if("".equals(scores_data.getText().toString())){
+                if ("".equals(scores_data.getText().toString())) {
                     Toast.makeText(getApplicationContext(), "資料不得為空", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -259,26 +274,30 @@ public class Option extends AppCompatActivity {
             @Override
             public String toString() {
                 StringBuilder sb = new StringBuilder();
-                for(String s : scores)
+                for (String s : scores)
                     sb.append(s).append(" | ");
-                if(number.length() == 1){
+                if (number.length() == 1) {
                     number = " " + number;
                 }
                 return number.concat("|    ").concat(sb.toString());
             }
         }
+
         static class All {
             ArrayList<Score> scores = new ArrayList<Score>();
-            public void add(Score score){
+
+            public void add(Score score) {
                 scores.add(score);
             }
-            public Score get(String index){
-                for(Score s : scores)
-                    if(s.number.equals(index))
+
+            public Score get(String index) {
+                for (Score s : scores)
+                    if (s.number.equals(index))
                         return s;
                 return null;
             }
-            public void clear(){
+
+            public void clear() {
                 scores.clear();
             }
         }
@@ -325,10 +344,10 @@ public class Option extends AppCompatActivity {
                     arr_times.add("全部");
                     Set<Integer> temp = new TreeSet<>();
                     Set<String> arr = dts.get(choice[0]);
-                    if(arr != null)
-                        for(String s : arr)
+                    if (arr != null)
+                        for (String s : arr)
                             temp.add(Integer.parseInt(s));
-                    for(int i : temp)
+                    for (int i : temp)
                         arr_times.add(String.valueOf(i));
                 }
 
@@ -349,22 +368,22 @@ public class Option extends AppCompatActivity {
                     String time = choice[1];
                     StringBuffer sb = new StringBuffer();
 
-                    if(!time.equals("全部")) {
+                    if (!time.equals("全部")) {
                         Map<String, String> scores = allData.get(specie).get(time);
                         String ans;
-                        for(int i = 1;i <= 40;i++){
-                            if(String.valueOf(i).length() == 1)
+                        for (int i = 1; i <= 40; i++) {
+                            if (String.valueOf(i).length() == 1)
                                 sb.append(" ");
                             sb.append(i).append("          ");
                             ans = scores.getOrDefault(String.valueOf(i), "  ");
-                            if(ans.length() == 2)
+                            if (ans.length() == 2)
                                 sb.append(" ");
                             sb.append(ans).append("\n");
                         }
-                    }else{
+                    } else {
                         All all = new All();
                         Map<String, Map<String, String>> scores1 = allData.get(specie);
-                        if(scores1 == null){
+                        if (scores1 == null) {
                             data_show.setText("查無資料");
                             return;
                         }
@@ -404,20 +423,20 @@ public class Option extends AppCompatActivity {
                 @Override
                 public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
                     Map<String, String> map;
-                    if(allData.containsKey(key)){
-                        if(allData.get(key).containsKey(snapshot.getKey())){
+                    if (allData.containsKey(key)) {
+                        if (allData.get(key).containsKey(snapshot.getKey())) {
                             map = allData.get(key).get(snapshot.getKey());
-                        }else{
+                        } else {
                             map = new TreeMap<>();
                         }
-                        for(DataSnapshot ds : snapshot.getChildren()){
+                        for (DataSnapshot ds : snapshot.getChildren()) {
                             map.put(ds.getKey(), ds.getValue().toString());
                         }
                         allData.get(key).put(snapshot.getKey(), map);
-                    }else{
+                    } else {
                         Map<String, Map<String, String>> at = new TreeMap<>();
                         Map<String, String> score = new TreeMap<>();
-                        for(DataSnapshot ds : snapshot.getChildren()){
+                        for (DataSnapshot ds : snapshot.getChildren()) {
                             score.put(ds.getKey(), ds.getValue().toString());
                         }
                         at.put(snapshot.getKey(), score);
@@ -531,10 +550,10 @@ public class Option extends AppCompatActivity {
                             temp.scores.add(score);
                         }
                     }
-                }else{
+                } else {
                     Map<String, Map<String, String>> score1 = QueryGrades.allData.get("考試");
 
-                    if(score1 != null) {
+                    if (score1 != null) {
                         Map<String, String> scores2;
                         Iterator<String> iter = score1.keySet().iterator();
 
@@ -558,11 +577,11 @@ public class Option extends AppCompatActivity {
 
                     score1 = QueryGrades.allData.get("作業");
 
-                    if(score1 != null) {
+                    if (score1 != null) {
                         Map<String, String> scores2;
                         Iterator<String> iter = score1.keySet().iterator();
 
-                        if(all.scores.size() == 0){
+                        if (all.scores.size() == 0) {
                             for (int i = 1; i <= 40; i++) {
                                 all.add(new QueryGrades.Score(String.valueOf(i)));
                             }
@@ -626,8 +645,8 @@ public class Option extends AppCompatActivity {
                 TextView view = new TextView(AverageGrades.this);
                 view.setText("\n");
                 view.setTextSize(16);
-                for(int i = 0;i < 5;i++)
-                    view.setText(view.getText().toString().concat(sets.get(i).name).concat( "|  " ).concat(String.valueOf(sets.get(i).score)).concat("\n"));
+                for (int i = 0; i < 5; i++)
+                    view.setText(view.getText().toString().concat(sets.get(i).name).concat("|  ").concat(String.valueOf(sets.get(i).score)).concat("\n"));
 
                 new AlertDialog.Builder(AverageGrades.this)
                         .setTitle("最高分5個")
@@ -635,6 +654,150 @@ public class Option extends AppCompatActivity {
                         .create()
                         .show();
             });
+        }
+    }
+
+    public static class ToTableGrades extends AppCompatActivity {
+        private boolean isPermissionPassed = false;
+
+        @RequiresApi(api = Build.VERSION_CODES.N)
+        @Override
+        protected void onCreate(@Nullable Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            getPermission();
+            if (isPermissionPassed) {
+                make();
+            }else
+                getPermission();
+        }
+
+        private void getPermission() {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                    ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                            != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                        this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 100);
+            } else {
+                isPermissionPassed = true;
+            }
+        }
+
+        @Override
+        public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+            if (requestCode == 100) {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    isPermissionPassed = true;
+                } else {
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(this
+                            , Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                        Toast.makeText(this, "無權限寫入!", Toast.LENGTH_SHORT).show();
+                        getPermission();
+                    }
+                }
+            }
+        }
+
+        @RequiresApi(api = Build.VERSION_CODES.N)
+        private void make() {
+
+            Map<String, Map<String, String>> score1 = QueryGrades.allData.get("作業");
+            QueryGrades.All all = new QueryGrades.All();
+
+            if (score1 != null) {
+                Map<String, String> scores2;
+                Iterator<String> iter = score1.keySet().iterator();
+
+                for (int i = 1; i <= 35; i++) {
+                    all.add(new QueryGrades.Score(String.valueOf(i)));
+                }
+
+                QueryGrades.Score temp;
+                String score;
+
+                while (iter.hasNext()) {
+                    String key = iter.next();
+                    scores2 = score1.get(key);
+                    for (int i = 1; i <= 35; i++) {
+                        temp = all.get(String.valueOf(i));
+                        score = scores2.getOrDefault(String.valueOf(i), "0");
+                        temp.scores.add(score);
+                    }
+                }
+            }
+
+            File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/成績.xls");
+            WritableWorkbook book = null;
+            try {
+                book = Workbook.createWorkbook(file);
+                //生成名為“第一頁”的工作表,引數0表示這是第一頁
+                WritableSheet sheet = book.createSheet("作業", 0);
+
+                //寫入內容
+                for (int i = 1; i <= all.scores.get(0).scores.size(); i++)  //title
+                    sheet.addCell(new Label(i, 0, String.valueOf(i + 1)));
+
+                for (int i = 1; i <= all.scores.size(); i++) {
+                    sheet.addCell(new Label(0, i, String.valueOf(i)));
+                    for (int j = 1; j <= all.scores.get(0).scores.size(); i++) {
+                        sheet.addCell(new Label(j, i, all.scores.get(i - 1).scores.get(j)));
+                    }
+                }
+            } catch (Exception e) {
+            }
+
+//          ========================================================================================
+
+            score1 = QueryGrades.allData.get("考試");
+
+            if (score1 != null) {
+                Map<String, String> scores2;
+                Iterator<String> iter = score1.keySet().iterator();
+
+                if (all.scores.size() == 0) {
+                    for (int i = 1; i <= 35; i++) {
+                        all.add(new QueryGrades.Score(String.valueOf(i)));
+                    }
+                }
+
+                QueryGrades.Score temp;
+                String score;
+
+                while (iter.hasNext()) {
+                    String key = iter.next();
+                    scores2 = score1.get(key);
+                    for (int i = 1; i <= 35; i++) {
+                        temp = all.get(String.valueOf(i));
+                        score = scores2.getOrDefault(String.valueOf(i), "0");
+                        temp.scores.add(score);
+                    }
+                }
+            }
+
+            //操作執行
+            try {
+                if(book == null)
+                    book = Workbook.createWorkbook(file);
+                WritableSheet sheet = book.createSheet("考試", 1);
+
+                //寫入內容
+                for (int i = 1; i <= all.scores.get(0).scores.size(); i++)  //title
+                    sheet.addCell(new Label(i, 0, String.valueOf(i + 1)));
+
+                for (int i = 1; i <= all.scores.size(); i++) {
+                    sheet.addCell(new Label(0, i, String.valueOf(i)));
+                    for (int j = 1; j <= all.scores.get(0).scores.size(); i++) {
+                        sheet.addCell(new Label(j, i, all.scores.get(i - 1).scores.get(j)));
+                    }
+                }
+                //寫入資料
+                book.write();
+                //關閉檔案
+                book.close();
+            } catch (Exception e) {
+            }
+            Toast.makeText(getApplicationContext(), file.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+
         }
     }
 
@@ -666,7 +829,7 @@ public class Option extends AppCompatActivity {
         tr.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                for(DataSnapshot ds : snapshot.getChildren())
+                for (DataSnapshot ds : snapshot.getChildren())
                     admin.add(ds.getValue().toString());
             }
 
@@ -676,7 +839,7 @@ public class Option extends AppCompatActivity {
             }
         });
 
-        String[] options = {"登記成績", "查詢成績", "成績平均"};
+        String[] options = {"登記成績", "查詢成績", "成績平均", "匯成Excel"};
 
         ListView listView = findViewById(R.id.option_listview);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, options);
@@ -684,10 +847,10 @@ public class Option extends AppCompatActivity {
         listView.setOnItemClickListener((parent, view, position, id) -> {
             String s = options[position];
             Intent intent = new Intent();
-            switch (s){
+            switch (s) {
                 case "登記成績":
-                    if(admin.size() != 0)
-                        if(!admin.contains(user)) {
+                    if (admin.size() != 0)
+                        if (!admin.contains(user)) {
                             Toast.makeText(Option.this, "權限不足, 無法訪問", Toast.LENGTH_SHORT).show();
                             return;
                         }
@@ -698,6 +861,9 @@ public class Option extends AppCompatActivity {
                     break;
                 case "成績平均":
                     intent.setClass(Option.this, AverageGrades.class);
+                    break;
+                case "匯成Excel":
+                    intent.setClass(Option.this, ToTableGrades.class);
                     break;
             }
             startActivity(intent);
@@ -713,8 +879,8 @@ public class Option extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
 
-        if(admin.size() != 0){
-            if(!admin.contains(user)){
+        if (admin.size() != 0) {
+            if (!admin.contains(user)) {
                 Toast.makeText(Option.this, "權限不足, 無法刪除", Toast.LENGTH_SHORT).show();
                 return super.onOptionsItemSelected(item);
             }

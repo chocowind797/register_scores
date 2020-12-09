@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="com.example.school">
-
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <application
         android:allowBackup="true"
         android:usesCleartextTraffic="true"
@@ -26,6 +26,7 @@
         <activity android:name=".Option$RegisterGrades"/>
         <activity android:name=".Option$QueryGrades"/>
         <activity android:name=".Option$AverageGrades"/>
+        <activity android:name=".Option$ToTableGrades"/>
     </application>
 
 </manifest>
