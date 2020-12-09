@@ -37,6 +37,8 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.database.core.utilities.Tree;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -586,6 +588,22 @@ public class Option extends AppCompatActivity {
                     return;
                 }
 
+                class Sorted {
+                    String name;
+                    double score;
+
+                    public Sorted(String name, double score) {
+                        this.name = name;
+                        this.score = score;
+                    }
+
+                    public double getScore() {
+                        return score;
+                    }
+                }
+
+                List<Sorted> sets = new ArrayList<>();
+
                 StringBuffer sb = new StringBuffer();
                 AtomicReference<Double> ave = new AtomicReference<>((double) 0);
                 for (QueryGrades.Score s : all.scores) {
@@ -594,9 +612,23 @@ public class Option extends AppCompatActivity {
                     scores.parallelStream().mapToDouble(Double::doubleValue).average().ifPresent(ave::set);
                     if (s.number.length() == 1)
                         sb.append("  ");
-                    sb.append(s.number).append("      ").append(String.format("%.1f", ave.get())).append("\n");
+                    double avee = Double.parseDouble(String.format("%.1f", ave.get()));
+                    sb.append(s.number).append("      ").append(avee).append("\n");
+                    sets.add(new Sorted(s.number, avee));
                 }
                 average_show.setText(sb);
+
+                Collections.sort(sets, Comparator.comparingDouble(Sorted::getScore).reversed());
+                TextView view = new TextView(getApplicationContext());
+
+                for(int i = 0;i < 5;i++)
+                    view.setText(view.getText().toString().concat(sets.get(i).name).concat( "|  " ).concat(String.valueOf(sets.get(i).score)).concat("\n"));
+
+                new AlertDialog.Builder(getApplicationContext())
+                        .setTitle("最高分5個")
+                        .setView(view)
+                        .create()
+                        .show();
             });
         }
     }
