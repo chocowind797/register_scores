@@ -48,6 +48,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.IntSupplier;
 import java.util.stream.IntStream;
 
 public class Option extends AppCompatActivity {
@@ -60,6 +62,7 @@ public class Option extends AppCompatActivity {
             setTitle("登記成績");
 
             final String[] choice = new String[1];
+            EditText times = findViewById(R.id.times);
 
             String[] species = {"作業", "考試"};
             Spinner spinner = findViewById(R.id.species_spinner);
@@ -69,6 +72,8 @@ public class Option extends AppCompatActivity {
                 @Override
                 public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                     choice[0] = species[position];
+                    Set<String> keys = dts.get(species[position]);
+                    times.setText(String.valueOf(keys.stream().mapToInt(Integer::parseInt).max().orElse(0) + 1));
                 }
 
                 @Override
@@ -77,7 +82,6 @@ public class Option extends AppCompatActivity {
                 }
             });
 
-            EditText times = findViewById(R.id.times);
 
             EditText scores_data = findViewById(R.id.scores_data);
 
@@ -619,12 +623,13 @@ public class Option extends AppCompatActivity {
                 average_show.setText(sb);
 
                 Collections.sort(sets, Comparator.comparingDouble(Sorted::getScore).reversed());
-                TextView view = new TextView(getApplicationContext());
-
+                TextView view = new TextView(AverageGrades.this);
+                view.setText("\n");
+                view.setTextSize(16);
                 for(int i = 0;i < 5;i++)
                     view.setText(view.getText().toString().concat(sets.get(i).name).concat( "|  " ).concat(String.valueOf(sets.get(i).score)).concat("\n"));
 
-                new AlertDialog.Builder(getApplicationContext())
+                new AlertDialog.Builder(AverageGrades.this)
                         .setTitle("最高分5個")
                         .setView(view)
                         .create()
