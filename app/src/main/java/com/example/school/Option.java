@@ -300,6 +300,13 @@ public class Option extends AppCompatActivity {
             public void clear() {
                 scores.clear();
             }
+
+            @Override
+            public String toString() {
+                return "All{" +
+                        "scores=" + scores +
+                        '}';
+            }
         }
 
         static Map<String, Map<String, Map<String, String>>> allData = new HashMap<>();
@@ -700,7 +707,6 @@ public class Option extends AppCompatActivity {
 
         @RequiresApi(api = Build.VERSION_CODES.N)
         private void make() {
-
             Map<String, Map<String, String>> score1 = QueryGrades.allData.get("作業");
             QueryGrades.All all = new QueryGrades.All();
 
@@ -726,28 +732,42 @@ public class Option extends AppCompatActivity {
                 }
             }
 
-            File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/成績.xls");
+            File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "成績.xls");
+
+            file.delete();
+
             WritableWorkbook book = null;
             try {
                 book = Workbook.createWorkbook(file);
-                //生成名為“第一頁”的工作表,引數0表示這是第一頁
+
                 WritableSheet sheet = book.createSheet("作業", 0);
 
                 //寫入內容
-                for (int i = 1; i <= all.scores.get(0).scores.size(); i++)  //title
-                    sheet.addCell(new Label(i, 0, String.valueOf(i + 1)));
+                int i = 1, j;
+                for (i = 1; i <= all.scores.get(0).scores.size(); i++)  //title
+                    sheet.addCell(new Label(i, 0, String.valueOf(i)));
 
-                for (int i = 1; i <= all.scores.size(); i++) {
+                sheet.addCell(new Label(i+1, 0, "總分"));
+                sheet.addCell(new Label(i+2, 0, "平均"));
+
+                double sum = 0;
+                for (i = 1; i <= all.scores.size(); i++, sum = 0) {
                     sheet.addCell(new Label(0, i, String.valueOf(i)));
-                    for (int j = 1; j <= all.scores.get(0).scores.size(); i++) {
-                        sheet.addCell(new Label(j, i, all.scores.get(i - 1).scores.get(j)));
+                    for (j = 1; j <= all.scores.get(0).scores.size(); j++) {
+                        sum += Double.parseDouble(all.scores.get(i - 1).scores.get(j - 1));
+                        sheet.addCell(new Label(j, i, all.scores.get(i - 1).scores.get(j - 1)));
                     }
+                    sheet.addCell(new Label(j+1, i, String.format("%.1f", sum)));
+                    double ave = sum / j;
+                    sheet.addCell(new Label(j+2, i, String.format("%.1f", ave)));
                 }
             } catch (Exception e) {
+                Toast.makeText(getApplicationContext(), "作業成績寫入出錯!", Toast.LENGTH_SHORT).show();
             }
 
 //          ========================================================================================
 
+            all = new QueryGrades.All();
             score1 = QueryGrades.allData.get("考試");
 
             if (score1 != null) {
@@ -781,22 +801,49 @@ public class Option extends AppCompatActivity {
                 WritableSheet sheet = book.createSheet("考試", 1);
 
                 //寫入內容
-                for (int i = 1; i <= all.scores.get(0).scores.size(); i++)  //title
-                    sheet.addCell(new Label(i, 0, String.valueOf(i + 1)));
+                int i, j;
+                for (i = 1; i <= all.scores.get(0).scores.size(); i++)  //title
+                    sheet.addCell(new Label(i, 0, String.valueOf(i)));
 
-                for (int i = 1; i <= all.scores.size(); i++) {
+                sheet.addCell(new Label(i+1, 0, "總分"));
+                sheet.addCell(new Label(i+2, 0, "平均"));
+
+                double sum = 0;
+
+                for (i = 1; i <= all.scores.size(); i++, sum = 0) {
                     sheet.addCell(new Label(0, i, String.valueOf(i)));
-                    for (int j = 1; j <= all.scores.get(0).scores.size(); i++) {
-                        sheet.addCell(new Label(j, i, all.scores.get(i - 1).scores.get(j)));
+                    for (j = 1; j <= all.scores.get(0).scores.size(); j++) {
+                        sum += Double.parseDouble(all.scores.get(i - 1).scores.get(j - 1));
+                        sheet.addCell(new Label(j, i, all.scores.get(i - 1).scores.get(j - 1)));
                     }
+
+                    sheet.addCell(new Label(j+1, i, String.format("%.1f", sum)));
+                    double ave = sum / j;
+                    sheet.addCell(new Label(j+2, i, String.format("%.1f", ave)));
                 }
                 //寫入資料
                 book.write();
                 //關閉檔案
                 book.close();
             } catch (Exception e) {
+                Toast.makeText(getApplicationContext(), "考試成績寫入出錯!", Toast.LENGTH_SHORT).show();
             }
-            Toast.makeText(getApplicationContext(), file.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+
+            new AlertDialog.Builder(ToTableGrades.this)
+                    .setTitle("匯出成功")
+                    .setMessage("\n檔案已存於 DOCUMENTS 內")
+                    .setPositiveButton("開啟檔案位置", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                            intent.putExtra(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS).getPath(), true);
+                            intent.setType("*/*");
+                            intent.addCategory(Intent.CATEGORY_OPENABLE);
+                            startActivity(intent);
+                        }
+                    })
+                    .create()
+                    .show();
 
         }
     }
@@ -840,6 +887,9 @@ public class Option extends AppCompatActivity {
         });
 
         String[] options = {"登記成績", "查詢成績", "成績平均", "匯成Excel"};
+
+        QueryGrades.registerRef("考試", exam);
+        QueryGrades.registerRef("作業", work);
 
         ListView listView = findViewById(R.id.option_listview);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, options);
