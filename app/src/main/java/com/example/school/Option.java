@@ -734,7 +734,11 @@ public class Option extends AppCompatActivity {
 
             File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "成績.xls");
 
-            file.delete();
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
 
             WritableWorkbook book = null;
             try {
