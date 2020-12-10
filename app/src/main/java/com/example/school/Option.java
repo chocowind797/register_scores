@@ -762,7 +762,7 @@ public class Option extends AppCompatActivity {
                     sheet.addCell(new Label(j+2, i, String.format("%.1f", ave)));
                 }
             } catch (Exception e) {
-                Toast.makeText(getApplicationContext(), "作業成績寫入出錯!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
             }
 
 //          ========================================================================================
@@ -826,7 +826,7 @@ public class Option extends AppCompatActivity {
                 //關閉檔案
                 book.close();
             } catch (Exception e) {
-                Toast.makeText(getApplicationContext(), "考試成績寫入出錯!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
             }
 
             new AlertDialog.Builder(ToTableGrades.this)
