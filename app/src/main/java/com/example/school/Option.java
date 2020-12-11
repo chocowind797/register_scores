@@ -35,6 +35,7 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.ChildEventListener;
@@ -681,7 +682,6 @@ public class Option extends AppCompatActivity {
                 make();
             } else {
                 getPermission();
-//                startActivity(new Intent(getApplicationContext(), Option.class));
             }
         }
 
@@ -702,7 +702,6 @@ public class Option extends AppCompatActivity {
                     ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CODE);
                 }
             }
-
         }
 
         @Override
@@ -756,7 +755,7 @@ public class Option extends AppCompatActivity {
                 }
             }
 
-            File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "成績.xls");
+            File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "成績.xls");
 
             WritableWorkbook book = null;
             try {
@@ -853,27 +852,22 @@ public class Option extends AppCompatActivity {
                 book.write();
                 //關閉檔案
                 book.close();
+
+                new AlertDialog.Builder(ToTableGrades.this)
+                        .setTitle("匯出成功")
+                        .setMessage("\n檔案已存於 DOWNLOADS 內")
+                        .setPositiveButton("開啟檔案位置", (dialog, which) -> {
+                            Intent intent = new Intent(Intent.ACTION_VIEW);
+                            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                            intent.setDataAndType(FileProvider.getUriForFile(getApplicationContext(), BuildConfig.APPLICATION_ID + ".fileProvider", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsoluteFile()), "*/*");
+                            startActivity(intent);
+                        })
+                        .create()
+                        .show();
             } catch (Exception e) {
                 Log.e("Tag", "write");
                 Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
             }
-
-            new AlertDialog.Builder(ToTableGrades.this)
-                    .setTitle("匯出成功")
-                    .setMessage("\n檔案已存於 DOCUMENTS 內")
-                    .setPositiveButton("開啟檔案位置", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                            intent.putExtra(file.getAbsolutePath(), true);
-                            intent.setType("*/*");
-                            intent.addCategory(Intent.CATEGORY_OPENABLE);
-                            startActivity(intent);
-                        }
-                    })
-                    .create()
-                    .show();
-
         }
     }
 
