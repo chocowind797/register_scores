@@ -28,6 +28,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -110,7 +111,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.main_activity);
 
         ArrayList<String> types = new ArrayList<>();
+        TextView version_show = findViewById(R.id.version_show);
 
+        version_show.setText(version);
         final boolean[] check = {false};
 
         DatabaseReference reference = FirebaseDatabase.getInstance("https://school-eb60d.firebaseio.com/").getReference();
