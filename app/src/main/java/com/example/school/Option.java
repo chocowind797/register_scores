@@ -677,7 +677,6 @@ public class Option extends AppCompatActivity {
         protected void onCreate(@Nullable Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             getPermission();
-
             if (isPermissionPassed) {
                 make();
             } else {
@@ -695,15 +694,13 @@ public class Option extends AppCompatActivity {
                     intent.setData(Uri.parse("package:" + getApplicationContext().getPackageName()));
                     startActivityForResult(intent, REQUEST_CODE);
                 }
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            } else {
                 if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
                         ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
                     isPermissionPassed = true;
                 } else {
                     ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CODE);
                 }
-            } else {
-                isPermissionPassed = true;
             }
 
         }
@@ -788,7 +785,6 @@ public class Option extends AppCompatActivity {
                     sheet.addCell(new Label(j + 2, i, String.format("%.1f", ave)));
                 }
                 sheet.addCell(new Label(0, i + 1, "班級"));
-                sheet.addCell(new Label(j + 1, i + 1, String.format("%.1f", all_sum)));
                 sheet.addCell(new Label(j + 2, i + 1, String.format("%.1f", all_sum / ((i - 1) * (j - 1)))));
             } catch (Exception e) {
                 Log.e("Tag", "makefile");
@@ -852,7 +848,6 @@ public class Option extends AppCompatActivity {
                     sheet.addCell(new Label(j + 2, i, String.format("%.1f", ave)));
                 }
                 sheet.addCell(new Label(0, i + 1, "班級"));
-                sheet.addCell(new Label(j + 1, i + 1, String.format("%.1f", all_sum)));
                 sheet.addCell(new Label(j + 2, i + 1, String.format("%.1f", all_sum / ((i - 1) * (j - 1)))));
                 //寫入資料
                 book.write();
