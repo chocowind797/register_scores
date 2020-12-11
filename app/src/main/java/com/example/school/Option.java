@@ -859,7 +859,7 @@ public class Option extends AppCompatActivity {
                         .setPositiveButton("開啟檔案位置", (dialog, which) -> {
                             Intent intent = new Intent(Intent.ACTION_VIEW);
                             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                            intent.setDataAndType(FileProvider.getUriForFile(getApplicationContext(), BuildConfig.APPLICATION_ID + ".fileProvider", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsoluteFile()), "*/*");
+                            intent.setDataAndType(FileProvider.getUriForFile(getApplicationContext(), BuildConfig.APPLICATION_ID + ".fileProvider", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)), "*/*");
                             startActivity(intent);
                         })
                         .create()
