@@ -9,6 +9,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -41,52 +42,55 @@ public class MainActivity extends AppCompatActivity {
             setTitle("科目");
 
             ArrayList<String> types = getIntent().getStringArrayListExtra("types");
-            if(!types.contains("新增科目"))
-                types.add("新增科目");
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, types);
 
-            ListView listView = findViewById(R.id.main_listview);
-            listView.setAdapter(adapter);
+            if(types != null) {
+                if (!types.contains("新增科目"))
+                    types.add("新增科目");
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, types);
 
-            listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    String subject = types.get(position);
-                    if(subject.equals("新增科目")){
-                        EditText et = new EditText(Relay.this);
+                ListView listView = findViewById(R.id.main_listview);
+                listView.setAdapter(adapter);
 
-                        new AlertDialog.Builder(Relay.this).setTitle("新增科目")
-                                .setIcon(android.R.drawable.ic_input_add)
-                                .setView(et)
-                                .setPositiveButton("确定", (dialog, which) -> {
-                                    String input = et.getText().toString();
-                                    if ("".equals(input)) {
-                                        Toast.makeText(Relay.this, "新增内容不能為空！", Toast.LENGTH_SHORT).show();
-                                    } else {
-                                        if(input.trim().equals("")){
+                listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                        String subject = types.get(position);
+                        if (subject.equals("新增科目")) {
+                            EditText et = new EditText(Relay.this);
+
+                            new AlertDialog.Builder(Relay.this).setTitle("新增科目")
+                                    .setIcon(android.R.drawable.ic_input_add)
+                                    .setView(et)
+                                    .setPositiveButton("確定", (dialog, which) -> {
+                                        String input = et.getText().toString();
+                                        if ("".equals(input)) {
                                             Toast.makeText(Relay.this, "新增内容不能為空！", Toast.LENGTH_SHORT).show();
-                                        }else{
-                                            if(types.contains(input)){
-                                                Toast.makeText(Relay.this, "科目已存在！", Toast.LENGTH_SHORT).show();
-                                            }else {
-                                                types.add(0, input);
-                                                listView.setAdapter(adapter);
-                                                Toast.makeText(Relay.this, "已新增項目", Toast.LENGTH_SHORT).show();
+                                        } else {
+                                            if (input.trim().equals("")) {
+                                                Toast.makeText(Relay.this, "新增内容不能為空！", Toast.LENGTH_SHORT).show();
+                                            } else {
+                                                if (types.contains(input)) {
+                                                    Toast.makeText(Relay.this, "科目已存在！", Toast.LENGTH_SHORT).show();
+                                                } else {
+                                                    types.add(0, input);
+                                                    listView.setAdapter(adapter);
+                                                    Toast.makeText(Relay.this, "已新增項目", Toast.LENGTH_SHORT).show();
+                                                }
                                             }
                                         }
-                                    }
-                                })
-                                .setNegativeButton("取消", (dialog, which) -> Toast.makeText(Relay.this, "取消新增", Toast.LENGTH_SHORT).show())
-                                .show();
-                    }else {
-                        Intent intent = new Intent(Relay.this, Option.class);
-                        Bundle bundle = new Bundle();
-                        bundle.putString("subject", subject);
-                        intent.putExtras(bundle);
-                        startActivity(intent);
+                                    })
+                                    .setNegativeButton("取消", (dialog, which) -> Toast.makeText(Relay.this, "取消新增", Toast.LENGTH_SHORT).show())
+                                    .show();
+                        } else {
+                            Intent intent = new Intent(Relay.this, Option.class);
+                            Bundle bundle = new Bundle();
+                            bundle.putString("subject", types.get(position));
+                            intent.putExtras(bundle);
+                            startActivity(intent);
+                        }
                     }
-                }
-            });
+                });
+            }
         }
     }
 
@@ -99,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
 
         ArrayList<String> types = new ArrayList<>();
 
-        final boolean[] check = {false, false};
+        final boolean[] check = {false};
 
         DatabaseReference reference = FirebaseDatabase.getInstance("https://school-eb60d.firebaseio.com/").getReference();
         reference.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -111,8 +115,9 @@ public class MainActivity extends AppCompatActivity {
                         if(version.equals(v)){
                             check[0] = true;
                         }
-                    }else
+                    }else {
                         types.add(ds.getKey());
+                    }
                 }
             }
 

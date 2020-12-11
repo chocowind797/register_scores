@@ -9,10 +9,12 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StrictMode;
+import android.provider.MediaStore;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.Menu;
@@ -32,6 +34,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.ChildEventListener;
@@ -46,6 +49,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.security.Permission;
+import java.security.Permissions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -665,47 +670,69 @@ public class Option extends AppCompatActivity {
     }
 
     public static class ToTableGrades extends AppCompatActivity {
-        private boolean isPermissionPassed = false;
+        private static boolean isPermissionPassed = false;
+        private static final int REQUEST_CODE = 1024;
 
-        @RequiresApi(api = Build.VERSION_CODES.N)
         @Override
         protected void onCreate(@Nullable Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             getPermission();
+
             if (isPermissionPassed) {
                 make();
-            }else
+            } else {
                 getPermission();
+//                startActivity(new Intent(getApplicationContext(), Option.class));
+            }
         }
 
         private void getPermission() {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-                    ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                            != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(
-                        this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 100);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                if (Environment.isExternalStorageManager()) {
+                    isPermissionPassed = true;
+                } else {
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                    intent.setData(Uri.parse("package:" + getApplicationContext().getPackageName()));
+                    startActivityForResult(intent, REQUEST_CODE);
+                }
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                        ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                    isPermissionPassed = true;
+                } else {
+                    ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_CODE);
+                }
             } else {
                 isPermissionPassed = true;
             }
+
         }
 
         @Override
         public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-            if (requestCode == 100) {
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            if (requestCode == REQUEST_CODE) {
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                        ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
                     isPermissionPassed = true;
                 } else {
-                    if (ActivityCompat.shouldShowRequestPermissionRationale(this
-                            , Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-                        Toast.makeText(this, "無權限寫入!", Toast.LENGTH_SHORT).show();
-                        getPermission();
-                    }
+                    Toast.makeText(getApplicationContext(), "儲存權限獲取失敗", Toast.LENGTH_SHORT).show();
                 }
             }
         }
 
-        @RequiresApi(api = Build.VERSION_CODES.N)
+        @Override
+        protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+            super.onActivityResult(requestCode, resultCode, data);
+            if (requestCode == REQUEST_CODE && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                if (Environment.isExternalStorageManager()) {
+                    isPermissionPassed = true;
+                } else {
+                    Toast.makeText(getApplicationContext(), "儲存權限獲取失敗", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
+
         private void make() {
             Map<String, Map<String, String>> score1 = QueryGrades.allData.get("作業");
             QueryGrades.All all = new QueryGrades.All();
@@ -734,13 +761,6 @@ public class Option extends AppCompatActivity {
 
             File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "成績.xls");
 
-            try {
-                file.mkdirs();
-                file.createNewFile();
-            } catch (IOException e) {
-                Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-
             WritableWorkbook book = null;
             try {
                 book = Workbook.createWorkbook(file);
@@ -748,25 +768,30 @@ public class Option extends AppCompatActivity {
                 WritableSheet sheet = book.createSheet("作業", 0);
 
                 //寫入內容
-                int i = 1, j;
+                int i = 1, j = 1;
                 for (i = 1; i <= all.scores.get(0).scores.size(); i++)  //title
                     sheet.addCell(new Label(i, 0, String.valueOf(i)));
 
-                sheet.addCell(new Label(i+1, 0, "總分"));
-                sheet.addCell(new Label(i+2, 0, "平均"));
+                sheet.addCell(new Label(i + 1, 0, "總分"));
+                sheet.addCell(new Label(i + 2, 0, "平均"));
 
-                double sum = 0;
+                double sum = 0, all_sum = 0;
                 for (i = 1; i <= all.scores.size(); i++, sum = 0) {
                     sheet.addCell(new Label(0, i, String.valueOf(i)));
                     for (j = 1; j <= all.scores.get(0).scores.size(); j++) {
                         sum += Double.parseDouble(all.scores.get(i - 1).scores.get(j - 1));
                         sheet.addCell(new Label(j, i, all.scores.get(i - 1).scores.get(j - 1)));
                     }
-                    sheet.addCell(new Label(j+1, i, String.format("%.1f", sum)));
+                    all_sum += sum;
+                    sheet.addCell(new Label(j + 1, i, String.format("%.1f", sum)));
                     double ave = sum / j;
-                    sheet.addCell(new Label(j+2, i, String.format("%.1f", ave)));
+                    sheet.addCell(new Label(j + 2, i, String.format("%.1f", ave)));
                 }
+                sheet.addCell(new Label(0, i + 1, "班級"));
+                sheet.addCell(new Label(j + 1, i + 1, String.format("%.1f", all_sum)));
+                sheet.addCell(new Label(j + 2, i + 1, String.format("%.1f", all_sum / ((i - 1) * (j - 1)))));
             } catch (Exception e) {
+                Log.e("Tag", "makefile");
                 Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
             }
 
@@ -801,19 +826,19 @@ public class Option extends AppCompatActivity {
 
             //操作執行
             try {
-                if(book == null)
+                if (book == null)
                     book = Workbook.createWorkbook(file);
                 WritableSheet sheet = book.createSheet("考試", 1);
 
                 //寫入內容
-                int i, j;
+                int i = 1, j = 1;
                 for (i = 1; i <= all.scores.get(0).scores.size(); i++)  //title
                     sheet.addCell(new Label(i, 0, String.valueOf(i)));
 
-                sheet.addCell(new Label(i+1, 0, "總分"));
-                sheet.addCell(new Label(i+2, 0, "平均"));
+                sheet.addCell(new Label(i + 1, 0, "總分"));
+                sheet.addCell(new Label(i + 2, 0, "平均"));
 
-                double sum = 0;
+                double sum = 0, all_sum = 0;
 
                 for (i = 1; i <= all.scores.size(); i++, sum = 0) {
                     sheet.addCell(new Label(0, i, String.valueOf(i)));
@@ -821,16 +846,20 @@ public class Option extends AppCompatActivity {
                         sum += Double.parseDouble(all.scores.get(i - 1).scores.get(j - 1));
                         sheet.addCell(new Label(j, i, all.scores.get(i - 1).scores.get(j - 1)));
                     }
-
-                    sheet.addCell(new Label(j+1, i, String.format("%.1f", sum)));
+                    all_sum += sum;
+                    sheet.addCell(new Label(j + 1, i, String.format("%.1f", sum)));
                     double ave = sum / j;
-                    sheet.addCell(new Label(j+2, i, String.format("%.1f", ave)));
+                    sheet.addCell(new Label(j + 2, i, String.format("%.1f", ave)));
                 }
+                sheet.addCell(new Label(0, i + 1, "班級"));
+                sheet.addCell(new Label(j + 1, i + 1, String.format("%.1f", all_sum)));
+                sheet.addCell(new Label(j + 2, i + 1, String.format("%.1f", all_sum / ((i - 1) * (j - 1)))));
                 //寫入資料
                 book.write();
                 //關閉檔案
                 book.close();
             } catch (Exception e) {
+                Log.e("Tag", "write");
                 Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
             }
 
@@ -841,7 +870,7 @@ public class Option extends AppCompatActivity {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                            intent.putExtra(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS).getPath(), true);
+                            intent.putExtra(file.getAbsolutePath(), true);
                             intent.setType("*/*");
                             intent.addCategory(Intent.CATEGORY_OPENABLE);
                             startActivity(intent);
@@ -865,7 +894,11 @@ public class Option extends AppCompatActivity {
         setContentView(R.layout.option);
         setTitle("功能");
 
-        String subject = getIntent().getExtras().getString("subject");
+        Bundle extras = getIntent().getExtras();
+
+        Log.wtf("Tag", extras.containsKey("subject") + "");
+
+        subject = extras.getString("subject");
 
         FirebaseDatabase firebase = FirebaseDatabase.getInstance("https://school-eb60d.firebaseio.com/");
         exam = firebase.getReference(subject + "/考試");
@@ -923,6 +956,7 @@ public class Option extends AppCompatActivity {
             }
             startActivity(intent);
         });
+
     }
 
     @Override
