@@ -3,20 +3,20 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.example.school">
 
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:requestLegacyExternalStorage="true"
         android:allowBackup="true"
-        android:usesCleartextTraffic="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:requestLegacyExternalStorage="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.School"
+        android:usesCleartextTraffic="true"
         tools:targetApi="m">
         <activity android:name=".Activities$HomeActivity">
             <intent-filter>
@@ -24,23 +24,29 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".Activities$LoginActivity"/>
-        <activity android:name=".Activities$RegisterActivity"/>
-        <activity android:name=".MainActivity$Relay"/>
-        <activity android:name=".MainActivity"/>
-        <activity android:name=".Option"/>
-        <activity android:name=".Option$RegisterGrades"/>
-        <activity android:name=".Option$QueryGrades"/>
-        <activity android:name=".Option$AverageGrades"/>
-        <activity android:name=".Option$ToTableGrades"/>
+        <activity android:name=".Activities$LoginActivity" />
+        <activity android:name=".Activities$RegisterActivity" />
+        <activity android:name=".MainActivity$Relay" />
+        <activity android:name=".MainActivity" />
+        <activity android:name=".Option" />
+        <activity android:name=".Option$RegisterGrades" />
+        <activity android:name=".Option$QueryGrades" />
+        <activity android:name=".Option$AverageGrades" />
+        <activity android:name=".Option$ToTableGrades">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+
         <provider
             android:name="androidx.core.content.FileProvider"
+            android:authorities="com.example.school.fileProvider"
             android:exported="false"
-            android:grantUriPermissions="true"
-            android:authorities="com.example.school.fileProvider">
+            android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths"/>
+                android:resource="@xml/file_paths" />
         </provider>
     </application>
 

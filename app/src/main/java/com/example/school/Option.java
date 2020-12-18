@@ -6,15 +6,12 @@ import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.StrictMode;
-import android.provider.MediaStore;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.Menu;
@@ -37,6 +34,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
@@ -44,14 +43,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.database.core.utilities.Tree;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.security.Permission;
-import java.security.Permissions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -59,13 +52,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.function.IntSupplier;
 import java.util.stream.IntStream;
 
 import jxl.Workbook;
@@ -243,7 +233,10 @@ public class Option extends AppCompatActivity {
 
                 for (String score : scores) {
                     temp = score.split(" ");
-                    reference.child(temp[0]).setValue(Integer.parseInt(temp[1]));
+                    if (temp[1].contains("."))
+                        reference.child(stimes).child(temp[0]).setValue(Double.parseDouble(temp[1]));
+                    else
+                        reference.child(stimes).child(temp[0]).setValue(Integer.parseInt(temp[1]));
                 }
                 Toast.makeText(RegisterGrades.this, "已新增", Toast.LENGTH_SHORT).show();
                 scores_data.setText("");
@@ -673,13 +666,51 @@ public class Option extends AppCompatActivity {
     public static class ToTableGrades extends AppCompatActivity {
         private static boolean isPermissionPassed = false;
         private static final int REQUEST_CODE = 1024;
-
+        private static File file;
         @Override
         protected void onCreate(@Nullable Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
+            setContentView(R.layout.toexcel);
+            setTitle("匯出成 Excel");
+
             getPermission();
             if (isPermissionPassed) {
                 make();
+
+                FloatingActionButton share = (FloatingActionButton) findViewById(R.id.share);
+                Button open = findViewById(R.id.open_file);
+
+                share.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent intent = new Intent(Intent.ACTION_SEND);
+                        intent.putExtra(Intent.EXTRA_SUBJECT, "分享檔案");
+                        intent.putExtra(Intent.EXTRA_TEXT, "成績.csv");
+                        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        intent.setType("file/*");
+                        intent.putExtra(Intent.EXTRA_STREAM, FileProvider.getUriForFile(ToTableGrades.this, BuildConfig.APPLICATION_ID + ".fileProvider", file));
+                        startActivity(intent);
+                    }
+                });
+
+                open.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+//                        Intent intent = new Intent(Intent.ACTION_VIEW);
+//                        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+//                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//                        intent.addCategory(Intent.CATEGORY_DEFAULT);
+//                        intent.setType(MimeTypeMap.getSingleton().getMimeTypeFromExtension("csv"));
+//                        intent.setData(FileProvider.getUriForFile(ToTableGrades.this, BuildConfig.APPLICATION_ID + ".fileProvider", file));
+//                        startActivity(intent);
+
+                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(""));
+                        intent.setPackage("com.google.android.apps.docs.editors.sheets");
+
+                        intent.putExtra("force_open",true);
+                        startActivity(intent);
+                    }
+                });
             } else {
                 getPermission();
             }
@@ -755,7 +786,7 @@ public class Option extends AppCompatActivity {
                 }
             }
 
-            File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "成績.xls");
+            file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath(), "成績.xlsx");
 
             WritableWorkbook book = null;
             try {
@@ -821,8 +852,9 @@ public class Option extends AppCompatActivity {
 
             //操作執行
             try {
-                if (book == null)
+                if (book == null) {
                     book = Workbook.createWorkbook(file);
+                }
                 WritableSheet sheet = book.createSheet("考試", 1);
 
                 //寫入內容
@@ -848,18 +880,19 @@ public class Option extends AppCompatActivity {
                 }
                 sheet.addCell(new Label(0, i + 1, "班級"));
                 sheet.addCell(new Label(j + 2, i + 1, String.format("%.1f", all_sum / ((i - 1) * (j - 1)))));
-                //寫入資料
+
                 book.write();
-                //關閉檔案
                 book.close();
 
                 new AlertDialog.Builder(ToTableGrades.this)
                         .setTitle("匯出成功")
                         .setMessage("\n檔案已存於 DOWNLOADS 內")
                         .setPositiveButton("開啟檔案位置", (dialog, which) -> {
-                            Intent intent = new Intent(Intent.ACTION_VIEW);
+                            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                            intent.setDataAndType(FileProvider.getUriForFile(ToTableGrades.this, BuildConfig.APPLICATION_ID + ".fileProvider", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsoluteFile()), "*/*");
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            intent.setType("*/*");
+                            intent.putExtra(Intent.EXTRA_STREAM, FileProvider.getUriForFile(getApplicationContext(), BuildConfig.APPLICATION_ID + ".fileProvider", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsoluteFile()));
                             startActivity(intent);
                         })
                         .create()
@@ -868,6 +901,7 @@ public class Option extends AppCompatActivity {
                 Log.e("Tag", "write");
                 Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
             }
+
         }
     }
 
