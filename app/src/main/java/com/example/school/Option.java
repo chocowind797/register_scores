@@ -12,11 +12,13 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.DocumentsContract;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.webkit.MimeTypeMap;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -677,13 +679,14 @@ public class Option extends AppCompatActivity {
             if (isPermissionPassed) {
                 make();
 
-                FloatingActionButton share = (FloatingActionButton) findViewById(R.id.share);
+                FloatingActionButton share = findViewById(R.id.share);
                 Button open = findViewById(R.id.open_file);
 
                 share.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         Intent intent = new Intent(Intent.ACTION_SEND);
+                        intent.addCategory(Intent.CATEGORY_DEFAULT);
                         intent.putExtra(Intent.EXTRA_SUBJECT, "分享檔案");
                         intent.putExtra(Intent.EXTRA_TEXT, "成績.csv");
                         intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -696,19 +699,19 @@ public class Option extends AppCompatActivity {
                 open.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-//                        Intent intent = new Intent(Intent.ACTION_VIEW);
-//                        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-//                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//                        intent.addCategory(Intent.CATEGORY_DEFAULT);
-//                        intent.setType(MimeTypeMap.getSingleton().getMimeTypeFromExtension("csv"));
-//                        intent.setData(FileProvider.getUriForFile(ToTableGrades.this, BuildConfig.APPLICATION_ID + ".fileProvider", file));
-//                        startActivity(intent);
-
-                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(""));
-                        intent.setPackage("com.google.android.apps.docs.editors.sheets");
-
-                        intent.putExtra("force_open",true);
+                        Intent intent = new Intent(Intent.ACTION_VIEW);
+                        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        intent.addCategory(Intent.CATEGORY_DEFAULT);
+                        intent.setType(MimeTypeMap.getSingleton().getMimeTypeFromExtension("csv"));
+                        intent.setData(FileProvider.getUriForFile(ToTableGrades.this, BuildConfig.APPLICATION_ID + ".fileProvider", file));
                         startActivity(intent);
+
+//                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(""));
+//                        intent.setPackage("com.google.android.apps.docs.editors.sheets");
+//
+//                        intent.putExtra("force_open",true);
+//                        startActivity(intent);
                     }
                 });
             } else {
@@ -898,7 +901,6 @@ public class Option extends AppCompatActivity {
                         .create()
                         .show();
             } catch (Exception e) {
-                Log.e("Tag", "write");
                 Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
             }
 
